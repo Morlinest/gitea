@@ -478,7 +478,7 @@ footer .ui.language .menu {
   padding-bottom: 0 !important;
 }
 .repos-filter {
-  margin-top: 0 !important;
+  margin-top: 10px !important;
   border-bottom-width: 0 !important;
   margin-bottom: 2px !important;
 }

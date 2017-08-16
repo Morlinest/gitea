@@ -1688,6 +1688,27 @@ function initVueComponents(){
             }
         },
 
+        computed: {
+            reposCount: function() {
+                var reposCount = {
+                    all: this.repos.length,
+                    sources: 0,
+                    forks: 0,
+                    mirrors: 0,
+                    collaborative: 0
+                };
+
+                for (var i = 0; i < this.repos.length; i++) {
+                    var repoType = this.getRepoType(this.repos[i]);
+                    if (repoType) {
+                        reposCount[repoType]++;
+                    }
+                }
+
+                return reposCount;
+            }
+        },
+
         mounted: function() {
             this.searchRepos();
 
@@ -1698,6 +1719,19 @@ function initVueComponents(){
         },
 
         methods: {
+            getRepoType: function(repo){
+                if (repo.owner.id == this.uid && !repo.mirror && !repo.fork) {
+                    return 'sources';
+                } else if (repo.owner.id == this.uid && !repo.mirror && repo.fork) {
+                    return 'forks';
+                } else if (repo.mirror) {
+                    return 'mirrors';
+                } else if (repo.owner.id != this.uid) {
+                    return 'collaborative';
+                } else 
+                    return null;
+            },
+
             changeTab: function(t) {
                 this.tab = t;
             },
@@ -1707,18 +1741,10 @@ function initVueComponents(){
             },
 
             showRepo: function(repo, filter) {
-                switch (filter) {
-                    case 'sources':
-                        return repo.owner.id == this.uid && !repo.mirror && !repo.fork;
-                    case 'forks':
-                        return repo.owner.id == this.uid && !repo.mirror && repo.fork;
-                    case 'mirrors':
-                        return repo.mirror;
-                    case 'collaborative':
-                        return repo.owner.id != this.uid;
-                    default:
-                        return true;
+                if (filter === 'all'){
+                    return true;
                 }
+                return this.getRepoType(repo) === filter;
             },
 
             searchRepos: function() {
