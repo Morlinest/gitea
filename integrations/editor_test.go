@@ -132,12 +132,15 @@ func testEditFileToNewBranch(t *testing.T, session *TestSession, user, repo, bra
 		},
 	)
 	resp = session.MakeRequest(t, req, http.StatusFound)
+	if resp.HeaderCode != http.StatusFound {
+		t.Errorf("%+v\n", string(resp.Body))
+	} else {
 
-	// Verify the change
-	req = NewRequest(t, "GET", path.Join(user, repo, "raw", targetBranch, filePath))
-	resp = session.MakeRequest(t, req, http.StatusOK)
-	assert.EqualValues(t, newContent, string(resp.Body))
-
+		// Verify the change
+		req = NewRequest(t, "GET", path.Join(user, repo, "raw", targetBranch, filePath))
+		resp = session.MakeRequest(t, req, http.StatusOK)
+		assert.EqualValues(t, newContent, string(resp.Body))
+	}
 	return resp
 }
 
