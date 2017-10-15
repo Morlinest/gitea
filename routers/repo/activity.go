@@ -43,30 +43,12 @@ func Activity(ctx *context.Context) {
 	ctx.Data["DateUntil"] = timeUntil.Format("January 2, 2006")
 	ctx.Data["PeriodText"] = ctx.Tr("repo.activity.period." + ctx.Data["Period"].(string))
 
-	stats := &models.ActivityStats{}
-
-	if ctx.Repo.Repository.UnitEnabled(models.UnitTypeReleases) {
-		if err := models.FillReleasesForActivity(stats, ctx.Repo.Repository.ID, timeFrom); err != nil {
-			ctx.Handle(500, "FillReleasesForActivity", err)
-			return
-		}
-	}
-	if ctx.Repo.Repository.UnitEnabled(models.UnitTypePullRequests) {
-		if err := models.FillPullRequestsForActivity(stats, ctx.Repo.Repository.ID, timeFrom); err != nil {
-			ctx.Handle(500, "FillPullRequestsForActivity", err)
-			return
-		}
-	}
-	if ctx.Repo.Repository.UnitEnabled(models.UnitTypeIssues) {
-		if err := models.FillIssuesForActivity(stats, ctx.Repo.Repository.ID, timeFrom); err != nil {
-			ctx.Handle(500, "FillIssuesForActivity", err)
-			return
-		}
-	}
-	if err := models.FillUnresolvedIssuesForActivity(stats, ctx.Repo.Repository.ID, timeFrom,
+	stats, err := models.NewActivityStats(ctx.Repo.Repository.ID, timeFrom,
+		ctx.Repo.Repository.UnitEnabled(models.UnitTypeReleases),
 		ctx.Repo.Repository.UnitEnabled(models.UnitTypeIssues),
-		ctx.Repo.Repository.UnitEnabled(models.UnitTypePullRequests)); err != nil {
-		ctx.Handle(500, "FillUnresolvedIssuesForActivity", err)
+		ctx.Repo.Repository.UnitEnabled(models.UnitTypePullRequests))
+	if err != nil {
+		ctx.Handle(500, "NewActivityStats", err)
 		return
 	}
 

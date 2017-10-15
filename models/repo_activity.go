@@ -5,12 +5,14 @@
 package models
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/go-xorm/xorm"
 )
 
 // ActivityStats represets issue and pull request information.
+// Should be initialized only by NewActivityStats() function.
 type ActivityStats struct {
 	OpenedPRs                   PullRequestList
 	OpenedPRAuthorCount         int64
@@ -23,6 +25,30 @@ type ActivityStats struct {
 	UnresolvedIssues            IssueList
 	PublishedReleases           []*Release
 	PublishedReleaseAuthorCount int64
+}
+
+// NewActivityStats returns initialized ActivityStats object
+func NewActivityStats(repoID int64, from time.Time, releases, issues, prs bool) (*ActivityStats, error) {
+	stats := &ActivityStats{}
+	if releases {
+		if err := stats.fillReleases(repoID, from); err != nil {
+			return nil, fmt.Errorf("FillReleases: %v", err)
+		}
+	}
+	if prs {
+		if err := stats.fillPullRequests(repoID, from); err != nil {
+			return nil, fmt.Errorf("FillPullRequests: %v", err)
+		}
+	}
+	if issues {
+		if err := stats.fillIssues(repoID, from); err != nil {
+			return nil, fmt.Errorf("FillIssues: %v", err)
+		}
+	}
+	if err := stats.fillUnresolvedIssues(repoID, from, issues, prs); err != nil {
+		return nil, fmt.Errorf("FillUnresolvedIssues: %v", err)
+	}
+	return stats, nil
 }
 
 // ActivePRCount returns total active pull request count
@@ -85,8 +111,8 @@ func (stats *ActivityStats) PublishedReleaseCount() int {
 	return len(stats.PublishedReleases)
 }
 
-// FillPullRequestsForActivity returns pull request information for activity page
-func FillPullRequestsForActivity(stats *ActivityStats, baseRepoID int64, fromTime time.Time) error {
+// fillPullRequests returns pull request information for activity page
+func (stats *ActivityStats) fillPullRequests(baseRepoID int64, fromTime time.Time) error {
 	var err error
 	var count int64
 
@@ -144,8 +170,8 @@ func pullRequestsForActivityStatement(baseRepoID int64, fromTime time.Time, merg
 	return sess
 }
 
-// FillIssuesForActivity returns issue information for activity page
-func FillIssuesForActivity(stats *ActivityStats, baseRepoID int64, fromTime time.Time) error {
+// fillIssues returns issue information for activity page
+func (stats *ActivityStats) fillIssues(baseRepoID int64, fromTime time.Time) error {
 	var err error
 	var count int64
 
@@ -182,8 +208,8 @@ func FillIssuesForActivity(stats *ActivityStats, baseRepoID int64, fromTime time
 	return nil
 }
 
-// FillUnresolvedIssuesForActivity returns unresolved issue and pull request information for activity page
-func FillUnresolvedIssuesForActivity(stats *ActivityStats, baseRepoID int64, fromTime time.Time, issues, prs bool) error {
+// fillUnresolvedIssues returns unresolved issue and pull request information for activity page
+func (stats *ActivityStats) fillUnresolvedIssues(baseRepoID int64, fromTime time.Time, issues, prs bool) error {
 	// Check if we need to select anything
 	if !issues && !prs {
 		return nil
@@ -212,8 +238,8 @@ func issuesForActivityStatement(baseRepoID int64, fromTime time.Time, closed, un
 	return sess
 }
 
-// FillReleasesForActivity returns release information for activity page
-func FillReleasesForActivity(stats *ActivityStats, baseRepoID int64, fromTime time.Time) error {
+// fillReleases returns release information for activity page
+func (stats *ActivityStats) fillReleases(baseRepoID int64, fromTime time.Time) error {
 	var err error
 	var count int64
 
